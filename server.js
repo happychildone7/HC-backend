@@ -20,6 +20,13 @@ const hcCityRouter = require('./Routes/HC_City.js');
 const hcFileUploadRouter = require('./Routes/HC_FileUpload.js');
 const mongoose = require('mongoose');
 
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://your-app.vercel.app',
+    'https://happychild.co.in',
+    'https://www.happychild.co.in'
+];
+
 
 const app = express();
 
@@ -51,7 +58,18 @@ app.use(express.json());
 
 //Configure CORS for frontend domain (important!)
 app.use(cors({
-    origin: 'https://localhost:3000', //frontend url
+    origin: function(origin, callback) {
+
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(
+            new Error('Not allowed by CORS')
+        );
+    },
     credentials: true
 }));
 

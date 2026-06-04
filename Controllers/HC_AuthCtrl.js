@@ -18,8 +18,8 @@ const loginUser = async (req,res) => {
 
     res.cookie('hc_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // set true in production
-        sameSite: 'Strict',
+        secure: true,
+        sameSite: 'None',
         maxAge: 60 * 60 * 1000 // 1 hour 
     });
 
@@ -77,8 +77,8 @@ const googleLogin = async (req,res) => {
 
         res.cookie('hc_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // set true in production
-            sameSite: 'Strict',
+            secure: true,
+            sameSite: 'None',
             maxAge: 60 * 60 * 1000 // 1 hour 
         });
 
@@ -137,8 +137,8 @@ const facebookLogin = async (req,res) => {
 
         res.cookie('hc_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // set true in production
-            sameSite: 'Strict',
+            secure: true,
+            sameSite: 'None',
             maxAge: 60 * 60 * 1000 // 1 hour 
         });
 
@@ -181,7 +181,7 @@ const logoutUser = async (req, res) => {
         res.clearCookie('hc_token', {
             httpOnly: true,
             secure: true,
-            sameSite: 'strict'
+            sameSite: 'None'
         });
         res.status(200).json({ message: 'Logged out successfully.' });
     }catch (err){
