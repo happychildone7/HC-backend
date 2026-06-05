@@ -22,7 +22,6 @@ const mongoose = require('mongoose');
 
 const allowedOrigins = [
     'http://localhost:3000',
-    'https://your-app.vercel.app',
     'https://happychild.co.in',
     'https://www.happychild.co.in'
 ];
