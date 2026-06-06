@@ -13,13 +13,13 @@ const {
 
 const router = express.Router();
 
-router.get('/search/', protect, searchContact);
-router.get('/:id', protect, getSingleContact);
-router.get('/', protect, getALlContacts);
-router.post('/', protect, createContact);
-router.patch('/:id', protect, updateContact);
-router.delete('/:id', protect, deleteContact);
-router.post('/deleteMany', protect, deleteMultipleContacts);
+router.get('/search/', searchContact);
+router.get('/:id', getSingleContact);
+router.get('/', getALlContacts);
+router.post('/', createContact);
+router.patch('/:id', updateContact);
+router.delete('/:id', deleteContact);
+router.post('/deleteMany', deleteMultipleContacts);
 router.post('/bulkActivate',activateContacts);
 
 module.exports = router;
