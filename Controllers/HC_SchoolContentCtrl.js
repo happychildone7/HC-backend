@@ -44,7 +44,7 @@ const fetchFeaturedSchoolContent = async(req, res) => {
             return res.status(400).json({ message: 'Location not found.'});
         }
         const locIds = locations.map(l => l._id);
-        const schools = await School.find({ location__c: { $in: locIds }, active__c: true }).limit(3);
+        const schools = await School.find({ location__c: { $in: locIds }, active__c: true }).limit(3).populate('location__c');
         const schooldIds = schools.map(sc => sc._id);
         const contents = await Content.find({
                                     related_To_Id__c: { $in: schooldIds }, 
@@ -101,6 +101,8 @@ const getResponseWrapper = (schools,contents) => {
                 entityBody9: `<b>Medium</b><br /> ${school.medium_Instruction__c || ''}`,
                 entityBody10: `<b>Facilities</b><br /> ${school.facilities__c || ''}`,
                 entityBody11: `<b>Class</b><br /> ${school.classes__c || ''}`,
+                entityBody12: `<b>Rating</b><br /> ${school.rating_Avg__c || ''}`,
+                entityBody13: `<b>Rating Count</b><br /> ${school.rating_Count__c || ''}`,
                 entityDescription: school.desciption__c || '',
                 hasLocationIcon: true,
                 image: images,
