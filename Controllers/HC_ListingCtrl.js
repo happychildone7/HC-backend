@@ -1,0 +1,101 @@
+const Event = require('../Models/Event.js');
+const Content = require('../Models/Content.js');
+const mongoose = require('mongoose');
+
+const fetchPartnerListings = async (req, res) => {
+    try {
+
+        const { ownerId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+            return res.status(400).json({
+                error: 'Invalid owner id'
+            });
+        }
+
+        const events = await Event.find({
+            owner__c: ownerId
+        })
+        .populate('location__c')
+        .sort({ createdAt: -1 })
+        .lean();
+
+        const eventIds = events.map(
+            ev => ev._id
+        );
+
+        const contents = await Content.find({
+            related_To_Id__c: {
+                $in: eventIds
+            },
+            related_Type__c: 'Event',
+            type__c: 'Image'
+        }).lean();
+
+        const response =
+            getListingResponseWrapper(
+                events,
+                contents
+            );
+
+        return res.status(200).json(
+            response
+        );
+
+    } catch (error) {
+
+        console.error(
+            'fetchPartnerListings error:',
+            error
+        );
+
+        return res.status(500).json({
+            error: error.message
+        });
+    }
+};
+
+const getListingResponseWrapper = (events,contents) => {
+    const imageContentMap = {};
+    for (const cont of contents) {
+        const code = cont.related_To_Code__c;
+        if (!code) continue;
+        if (!imageContentMap[code]) {
+            imageContentMap[code] = [];
+        }
+        imageContentMap[code].push({
+            hcContentImageId: cont._id,
+            imageURL:
+                cont.image_URL__c,
+            isPrimary:
+                cont.primary_Image__c
+        });
+    }
+
+    return {
+        listings: events.map(
+            event => {
+                const images = imageContentMap[event.event_Code__c] || [];
+                return {
+                    listingId: event._id,
+                    listingType: 'Event',
+                    listingCode: event.event_Code__c,
+                    listingName: event.Name__c,
+                    listingStatus: event.status__c,
+                    active: event.active__c,
+                    description: event.description__c,
+                    location: [
+                                event.location__c?.line1__c,
+                                event.location__c?.city__c
+                              ].filter(Boolean).join(', '),
+                    createdAt: event.createdAt,
+                    image: images
+                };
+            }
+        )
+    };
+};
+
+module.exports = {
+    fetchPartnerListings
+}
