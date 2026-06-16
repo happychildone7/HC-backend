@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const School = require('../Models/School.js');
 const Location = require('../Models/Location.js');
 const Event = require('../Models/Event.js');
+const User = require('../Models/User.js');
+const Contact = require('../Models/Contact.js');
 const HCContent = require('../Models/Content.js');
 const { deleteCloudinaryImages } = require('../utils/cloudinaryHelper.js');
 
@@ -76,9 +78,18 @@ const createEvent = async (req,res) => {
             registered_Count__c,
             active__c,
             status__c,
+            owner__c,
             primary_Contact__c 
         } = req.body;
     
+    if(!owner__c) {
+      return res.status(400).json({ error: 'Owner is required.' });
+    }
+    const ownerExists = await User.findById(owner__c);
+    if (!ownerExists) {
+        console.log('no user');
+        return res.status(400).json({ error: 'Invalid Owner selected.' });
+    }
     if(primary_Contact__c){
         const contExists = await Contact.findById(primary_Contact__c);
         if (!contExists) {
@@ -104,7 +115,7 @@ const createEvent = async (req,res) => {
         const event = await Event.create({ 
                                             Name__c,desciption__c,event_Type__c,event_Date__c,event_Start_Time__c,event_End_Time__c,duration_Hours__c,fee_Range__c,
                                             age_Group__c,format__c,amenities__c,school__c,location__c,capacity__c,registered_Count__c,
-                                            active__c,status__c,primary_Contact__c 
+                                            active__c,status__c,primary_Contact__c,owner__c
                                         });
         return res.status(200).json(event);
     }
@@ -135,7 +146,7 @@ const updateEvent = async (req,res) => {
         const populatedEvent = await Event.findById(id)
             .populate('school__c')
             .populate('location__c')
-            .populate('primary_Contact__c')
+            .populate('owner__c')
             .lean();
         return res.status(200).json(populatedEvent);
     }catch(error){

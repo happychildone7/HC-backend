@@ -2,6 +2,7 @@ const express = require('express');
 const {
     searchUsers,
     fetchUsers,
+    getUserByContactId,
     getSingleUser,
     getALlUsers,
     createUser,
@@ -13,7 +14,8 @@ const {
 const router = express.Router();
 
 router.get('/search/',searchUsers);
-router.get('/fetch',fetchUsers)
+router.get('/fetch',fetchUsers);
+router.get('/contact/:contactId',getUserByContactId);
 router.get('/:id',getSingleUser);
 router.get('/',getALlUsers);
 router.post('/',createUser);

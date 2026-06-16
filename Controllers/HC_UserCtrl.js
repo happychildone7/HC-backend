@@ -27,6 +27,34 @@ const fetchUsers = async (req,res) => {
       }
 }
 
+//Fetch user by contactid
+const getUserByContactId = async (req, res) => {
+    try {
+        const { contactId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(contactId)) {
+            return res.status(400).json({
+                error: 'Invalid Contact Id'
+            });
+        }
+
+        const user = await HCUser.findOne({
+            contact__c: contactId
+        });
+        if (!user) {
+            return res.status(404).json({
+                error: 'User not found'
+            });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        console.error('getUserByContactId error:',error);
+        return res.status(500).json({
+            error: error.message
+        });
+    }
+};
+
 //get single User
 const getSingleUser = async (req,res) => {
     const { id } = req.params;
@@ -147,6 +175,7 @@ const deactivateUser = async (req,res) => {
 module.exports = {
     searchUsers,
     fetchUsers,
+    getUserByContactId,
     getSingleUser,
     getALlUsers,
     createUser,

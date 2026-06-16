@@ -3,10 +3,12 @@ const bcrypt = require('bcryptjs');
 
 const Schema = mongoose.Schema
 
+const roleEnum = ['Consumer', 'Admin', 'Partner'];
+
 const hcUserSchema = new Schema({
     role__c: {
         type: String,
-        enum: ['Consumer', 'Admin'], 
+        enum: roleEnum, 
         required: true
     },
     phone__c: { 

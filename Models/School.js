@@ -85,6 +85,11 @@ const hcSchoolSchema = new Schema({
         unique: true,
         immutable: true
     },
+    owner__c: {
+        type: Schema.Types.ObjectId,
+        ref: 'HC_User',
+        required: true
+    },
     active__c: { 
         type: Boolean,
         default: false

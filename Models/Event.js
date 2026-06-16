@@ -86,6 +86,11 @@ const hcEventSchema = new Schema({
         enum: ['Draft', 'Published', 'Ongoing', 'Completed', 'Cancelled'],
         default: 'Draft'
     },
+    owner__c: {
+        type: Schema.Types.ObjectId,
+        ref: 'HC_User',
+        required: true
+    },
     primary_Contact__c: {
         type: Schema.Types.ObjectId,
         ref: 'HC_Contact'
