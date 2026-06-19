@@ -6,10 +6,10 @@ const relatedTypeEnum = [
                             'School', 'Event', 'Tutor', 'Institute', 'Product', 'None'
                          ];
 const promotionTypeEnum = [
-                                'Featured', 'Premium', 'HomepageBanner'
+                                'Featured', 'Premium', 'Spotlight'
                              ];
 const paymentStatusEnum = [
-                     'Pending', 'Paid', 'Expired'
+                     'Pending', 'Paid', 'Failed'
                     ];
 
 const hcPromotionSchema = new Schema({
@@ -32,6 +32,14 @@ const hcPromotionSchema = new Schema({
         enum: promotionTypeEnum,
         default: 'Featured'
     },
+    amount__c: {
+        type: Number,
+        required: true
+    },
+    duration_Days__c: {
+        type: Number,
+        required: true
+    },
     priority__c: {
         type: Number,
         default: 1
@@ -51,8 +59,22 @@ const hcPromotionSchema = new Schema({
         enum: paymentStatusEnum,
         default: 'Pending'
     },
+    payment_Reference__c: {
+        type: String
+    },
+    razorpay_Order_Id__c: {
+        type: String
+    },
+    razorpay_Payment_Id__c: {
+        type: String
+    },
     notes__c: {
         type: String
+    },
+    created_By__c: {
+        type: Schema.Types.ObjectId,
+        ref: 'HC_User',
+        required: true
     }
 },{timestamps: true});
 
@@ -76,7 +98,7 @@ hcPromotionSchema.pre('validate', async function (next) {
   
         // Format to six-digit zero-padded string
         const code = String(counter.seq).padStart(6, '0');
-        this.promotion_Number__c = `HCR-${code}`;
+        this.promotion_Number__c = `HCP-${code}`;
       } catch (err) {
         return next(err);
       }

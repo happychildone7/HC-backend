@@ -8,7 +8,7 @@ const {
     deletePromotion,
     deleteMultiplePromotion,
     activatePromotions,
-    deactivatePromotions
+    deactivatePromotions,
 } = require('../Controllers/HC_PromotionCtrl.js');
 
 const router = express.Router();

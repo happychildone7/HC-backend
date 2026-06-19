@@ -12,5 +12,5 @@ const hcCounterSchema = new Schema({
     }
 });
 
-module.exports = mongoose.model('HC_Counter',hcCounterSchema,'HC_Counter')
+module.exports = mongoose.models.HC_Counter || mongoose.model('HC_Counter',hcCounterSchema);
 

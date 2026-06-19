@@ -51,107 +51,103 @@ const getAllPromotions = async (req,res) => {
 //create a Promotion
 const createPromotion = async (req,res) => {
     console.log('check>><>',req.body);
-    req.body.promotion_Type__c = req.body.promotion_Type__c ?? 'Featured';
-    req.body.priority__c = req.body.priority__c ?? 1;
-    req.body.start_Date__c = req.body.start_Date__c || null;
-    req.body.end_Date__c = req.body.end_Date__c || null;
-    req.body.active__c = req.body.active__c ?? false;
-    req.body.payment_Status__c = req.body.payment_Status__c ?? 'Pending';
-    req.body.notes__c = req.body.notes__c || null;
+    try{
+        const{
+                related_To_Id__c,
+                related_Type__c,
+                promotion_Type__c,
+                duration_Days__c,
+                amount__c,
+                notes__c,
+                created_By__c
+            } = req.body;
 
-    const { 
+        if(!related_To_Id__c) {
+            return res.status(400).json({ error: 'Related record is required.' });
+        }
+        if(!related_Type__c) {
+            return res.status(400).json({ error: 'Related type is required.' });
+        }
+        if(!created_By__c) {
+            return res.status(400).json({ error: 'Created by is required.' });
+        }
+        if(!mongoose.Types.ObjectId.isValid(related_To_Id__c)) {
+            return res.status(400).json({
+                error: 'Invalid related record id.'
+            });
+        }
+        if(!mongoose.Types.ObjectId.isValid(created_By__c)) {
+            return res.status(400).json({
+                error: 'Invalid created by id.'
+            });
+        }
+        if(!duration_Days__c){
+            return res.status(400).json({ error: 'Duration is required.' });
+        }
+        if (!amount__c) {
+            return res.status(400).json({ error: 'Amount is required.' });
+        }
+        let recordExists = false;
+        switch (related_Type__c) {
+            case 'Event':
+                recordExists = await Event.exists({ _id: related_To_Id__c });
+                break;
+            case 'School':
+                recordExists = await School.exists({ _id: related_To_Id__c });
+                break;
+            /*
+            case 'Institute':
+                recordExists = await Institute.exists({ _id: related_To_Id__c });
+                break;
+            case 'Tutor':
+                recordExists = await Tutor.exists({ _id: related_To_Id__c });
+                break;
+            case 'Product':
+                recordExists = await Product.exists({ _id: related_To_Id__c });
+                break;
+            */
+            default:
+                return res.status(400).json({ success: false,error: 'Invalid related type.' });
+        }
+        if (!recordExists) {
+            return res.status(404).json({ success: false, error: `${related_Type__c} not found.` });
+        }
+
+        /* Auto Priority */
+        let priority__c = 1;
+        switch (promotion_Type__c) {
+            case 'Premium':
+                priority__c = 2;
+                break;
+
+            case 'Spotlight':
+                priority__c = 3;
+                break;
+
+            default:
+                priority__c = 1;
+        }  
+
+        /* Create Promotion */
+        const promotion = await Promotion.create({
             related_To_Id__c,
             related_Type__c,
-            promotion_Type__c,
+            promotion_Type__c: promotion_Type__c || 'Featured',
             priority__c,
-            start_Date__c,
-            end_Date__c,
-            active__c,
-            payment_Status__c,
-            notes__c
-        } = req.body;
-
-    if(!related_To_Id__c) {
-      return res.status(400).json({ error: 'Related to is required.' });
-    }
-    if(!related_Type__c) {
-      return res.status(400).json({ error: 'Related type is required.' });
-    }
-    if(!mongoose.Types.ObjectId.isValid(related_To_Id__c)) {
-        return res.status(400).json({
-            error: 'Invalid related record id.'
+            duration_Days__c,
+            amount__c,
+            active__c: false,
+            payment_Status__c: 'Pending',
+            start_Date__c: null,
+            end_Date__c: null,
+            notes__c: notes__c || null,
+            created_By__c
         });
-    }
-    /* Validate Event Exists */
-    if(related_Type__c === 'Event'){
-        const event = await Event.findById(
-            related_To_Id__c
-        );
-        if(!event){
-            return res.status(400).json({
-                error: 'Event not found.'
-            });
-        }
-    }
-    else if(related_Type__c === 'School'){
-        const school = await School.findById(
-            related_To_Id__c
-        );
-        if(!school){
-            return res.status(400).json({
-                error: 'School not found.'
-            });
-        }
-    }
-    /* else if(related_Type__c === 'Institute'){
-        const institute = await Institute.findById(
-            related_To_Id__c
-        );
-        if(!institute){
-            return res.status(400).json({
-                error: 'Institute not found.'
-            });
-        }
-    }
-    else if(related_Type__c === 'Tutor'){
-        const tutor = await Tutor.findById(
-            related_To_Id__c
-        );
-        if(!tutor){
-            return res.status(400).json({
-                error: 'Tutor not found.'
-            });
-        }
-    }
-   else if(related_Type__c === 'Product'){
-        const product = await Product.findById(
-            related_To_Id__c
-        );
-        if(!product){
-            return res.status(400).json({
-                error: 'Product not found.'
-            });
-        }
-    } */
-   /* Date Validation */
-    if(start_Date__c && end_Date__c && new Date(start_Date__c) > new Date(end_Date__c)){
-        return res.status(400).json({
-            error:
-                'End date must be greater than start date.'
-        });
-    }
-
-
-    try{
-        const promotion = await Promotion.create({ 
-                                            related_To_Id__c,related_Type__c,promotion_Type__c,priority__c,start_Date__c,
-                                            end_Date__c,active__c,payment_Status__c,notes__c
-                                        });
-        return res.status(200).json(promotion);
+        return res.status(201).json(promotion);
     }
     catch(error){
-        console.log('some error',error);
-        return res.status(400).json({error: error.message})
+        console.log('Create Promotion Error:',error);
+        return res.status(500).json({error: error.message})
     }
 }
 
