@@ -30,7 +30,7 @@ const getSingleEvent = async (req,res) => {
     if(!event){
         return res.status(400).json({error: 'No such Event'});
     }
-    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'Event'}).lean();
+    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'HC_Event'}).lean();
     const images = contents.map(content => ({
         id: content._id,
         publicId: content.public_Id__c,

@@ -3,7 +3,7 @@ const Counter = require('./Counter.js');
 const Schema = mongoose.Schema;
 
 const relatedTypeEnum = [
-                            'School', 'Event', 'Tutor', 'Institute', 'Product', 'None'
+                            'HC_School', 'HC_Event', 'HC_Tutor', 'HC_Institute', 'HC_Product'
                          ];
 const promotionTypeEnum = [
                                 'Featured', 'Premium', 'Spotlight'
@@ -20,7 +20,8 @@ const hcPromotionSchema = new Schema({
     },
     related_To_Id__c: {
       type: Schema.Types.ObjectId,
-      required: true
+      required: true,
+      refPath: 'related_Type__c'
     },
     related_Type__c: {
       type: String,

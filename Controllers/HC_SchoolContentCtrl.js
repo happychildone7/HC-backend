@@ -19,7 +19,7 @@ const fetchSchoolContent = async(req, res) => {
         const schooldIds = schools.map(sc => sc._id);
         const contents = await Content.find({
                                     related_To_Id__c: { $in: schooldIds }, 
-                                    related_Type__c: "School",
+                                    related_Type__c: "HC_School",
                                     type__c: "Image",
                                 }).lean();
         const responseWrapper = getResponseWrapper(schools,contents);
@@ -48,7 +48,7 @@ const fetchFeaturedSchoolContent = async(req, res) => {
         const schooldIds = schools.map(sc => sc._id);
         const contents = await Content.find({
                                     related_To_Id__c: { $in: schooldIds }, 
-                                    related_Type__c: "School",
+                                    related_Type__c: "HC_School",
                                     type__c: "Image",
                                 }).lean();
         const responseWrapper = getResponseWrapper(schools,contents);

@@ -29,7 +29,7 @@ const fetchPartnerListings = async (req, res) => {
             related_To_Id__c: {
                 $in: eventIds
             },
-            related_Type__c: 'Event',
+            related_Type__c: 'HC_Event',
             type__c: 'Image'
         }).lean();
         const response = getListingResponseWrapper(events,contents);
@@ -68,7 +68,7 @@ const getListingResponseWrapper = (events,contents) => {
                 const images = imageContentMap[event.event_Code__c] || [];
                 return {
                     listingId: event._id,
-                    listingType: 'Event',
+                    listingType: 'HC_Event',
                     listingCode: event.event_Code__c,
                     listingName: event.Name__c,
                     listingStatus: event.status__c,
@@ -95,16 +95,16 @@ const getListingDetail = async(req,res) => {
         }
         let listing = null;
         switch (listingType?.toUpperCase()) {
-            case "EVENT":
+            case "HC_EVENT":
                 listing = await Event.findById(listingId).populate('location__c').lean();
                 break;
-            case "SCHOOL":
+            case "HC_SCHOOL":
                 listing = await School.findById(listingId).populate('location__c').lean();
                 break;
-            /* case "INSTITUTE":
+            /* case "HC_INSTITUTE":
                 listing = await Institute.findById(listingId).populate('location__c').lean();
                 break;
-            case "TUTOR":
+            case "HC_TUTOR":
                 listing = await Tutor.findById(listingId).populate('location__c').lean();
                 break; */
             default:

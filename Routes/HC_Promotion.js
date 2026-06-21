@@ -9,6 +9,7 @@ const {
     deleteMultiplePromotion,
     activatePromotions,
     deactivatePromotions,
+    getPromotionsByOwner
 } = require('../Controllers/HC_PromotionCtrl.js');
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.delete('/:id',deletePromotion);
 router.post('/deleteMany',deleteMultiplePromotion);
 router.post('/bulkActivate',activatePromotions);
 router.post('/bulkDeactivate',deactivatePromotions);
+router.get('/myPromotions/:ownerId',getPromotionsByOwner);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const wishlistTypeEnum = [
                             'Wishlist', 'Favorite', 'Save_For_Later'
                         ];
 const relatedTypeEnum = [
-                            'School', 'Event', 'Tutor', 'Institute', 'Product', 'None'
+                            'HC_School', 'HC_Event', 'HC_Tutor', 'HC_Institute', 'HC_Product'
                          ];
 
 const hcWishlistSchema = new Schema({

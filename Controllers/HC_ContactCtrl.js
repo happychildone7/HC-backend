@@ -27,7 +27,7 @@ const getSingleContact = async (req,res) => {
     if(!contact){
         return res.status(400).json({error: 'No such Contact'});
     }
-    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'Contact'}).lean();
+    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'HC_Contact'}).lean();
     const images = contents.map(content => ({
         id: content._id,
         publicId: content.public_Id__c,

@@ -19,7 +19,7 @@ const fetchEventContent = async(req, res) => {
         const eventdIds = events.map(ev => ev._id);
         const contents = await Content.find({
                                     related_To_Id__c: { $in: eventdIds }, 
-                                    related_Type__c: "Event",
+                                    related_Type__c: "HC_Event",
                                     type__c: "Image",
                                 }).lean();
         const responseWrapper = getResponseWrapper(events,contents);
@@ -48,7 +48,7 @@ const fetchFeaturedEventContent = async(req, res) => {
         const eventdIds = events.map(sc => sc._id);
         const contents = await Content.find({
                                     related_To_Id__c: { $in: eventdIds }, 
-                                    related_Type__c: "Event",
+                                    related_Type__c: "HC_Event",
                                     type__c: "Image",
                                 }).lean();
         const responseWrapper = getResponseWrapper(events,contents);

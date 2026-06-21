@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Counter = require('./Counter.js');
 const Schema = mongoose.Schema;
 
-const relatedTypeEnum = [ 'Promotion', 'EventRegistration', 'Admission', 'ProductOrder', 'Subscription' ];
+const relatedTypeEnum = [ 'HC_Promotion', 'HC_Registration', 'Admission', 'ProductOrder', 'Subscription' ];
 const paymentStatusEnum = [ 'Pending', 'Paid', 'Failed', 'Refunded' ];
 const gatewayEnum = [ 'Razorpay' ];
 

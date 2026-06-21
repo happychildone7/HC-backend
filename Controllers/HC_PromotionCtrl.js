@@ -89,20 +89,20 @@ const createPromotion = async (req,res) => {
         }
         let recordExists = false;
         switch (related_Type__c) {
-            case 'Event':
+            case 'HC_Event':
                 recordExists = await Event.exists({ _id: related_To_Id__c });
                 break;
-            case 'School':
+            case 'HC_School':
                 recordExists = await School.exists({ _id: related_To_Id__c });
                 break;
             /*
-            case 'Institute':
+            case 'HC_Institute':
                 recordExists = await Institute.exists({ _id: related_To_Id__c });
                 break;
-            case 'Tutor':
+            case 'HC_Tutor':
                 recordExists = await Tutor.exists({ _id: related_To_Id__c });
                 break;
-            case 'Product':
+            case 'HC_Product':
                 recordExists = await Product.exists({ _id: related_To_Id__c });
                 break;
             */
@@ -285,6 +285,26 @@ const deactivatePromotions = async (req,res) => {
         });
     }
 };
+const getPromotionsByOwner = async(req,res) => {
+    try{
+        const { ownerId } = req.params;
+        console.log('oc>',ownerId);
+        if(!mongoose.Types.ObjectId.isValid(ownerId)){
+            return res.status(400).json({error: 'Invalid owner id'});
+        }
+        const promotions = await Promotion.find({
+            created_By__c : ownerId
+        }).populate('related_To_Id__c').sort({ createdAt: -1 }).lean();
+        if (!promotions.length) {
+            return res.status(200).json([]);
+        }
+        res.status(200).json(promotions);
+    }catch(error){
+        return res.status(500).json({
+            error: error.message
+        });
+    }
+};
 
 module.exports = {
     searchPromotions,
@@ -295,5 +315,6 @@ module.exports = {
     deletePromotion,
     deleteMultiplePromotion,
     activatePromotions,
-    deactivatePromotions
+    deactivatePromotions,
+    getPromotionsByOwner
 }

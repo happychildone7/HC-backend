@@ -14,10 +14,10 @@ const getSingleHCContent = async (req,res) => {
     if(!content){
         return res.status(400).json({error: 'No such HC Content'});
     }
-    if(content.related_Type__c === 'School') {
+    if(content.related_Type__c === 'HC_School') {
         const school = await HCSchool.findById(content.related_To_Id__c).lean();
         content.related_To_Id__c = school;
-    } else if (content.related_Type__c === 'Tutor') {
+    } else if (content.related_Type__c === 'HC_Tutor') {
         
     }
     console.log('GETSINGLECONTENT>');
@@ -30,7 +30,7 @@ const getALlHCContent = async (req,res) => {
         const contents = await HCContent.find({}).populate('location__c').lean();
         // Manual population
         for (let content of contents) {
-            if (content.related_Type__c === 'School') {
+            if (content.related_Type__c === 'HC_School') {
                 const school = await HCSchool.findById(content.related_To_Id__c).lean();
                 content.related_To_Id__c = school;
             } 

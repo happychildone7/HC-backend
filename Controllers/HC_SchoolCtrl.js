@@ -28,7 +28,7 @@ const getSingleSchool = async (req,res) => {
     if(!school){
         return res.status(400).json({error: 'No such School'});
     }
-    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'School'}).lean();
+    const contents = await HCContent.find({ related_To_Id__c:  id, type__c: 'Image', related_Type__c: 'HC_School'}).lean();
     const images = contents.map(content => ({
         id: content._id,
         publicId: content.public_Id__c,
