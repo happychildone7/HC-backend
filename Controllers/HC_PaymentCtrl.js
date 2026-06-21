@@ -79,7 +79,7 @@ const verifyPayment = async(req,res) => {
         payment.paid_At__c = new Date();
         
         await payment.save({ session });
-        if(payment.related_Type__c === "Promotion"){
+        if(payment.related_Type__c === "HC_Promotion"){
             const promotion = await Promotion.findById(payment.related_To_Id__c);
             if(promotion) {
                 promotion.payment_Status__c = "Paid";
