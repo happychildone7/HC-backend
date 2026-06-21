@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Counter = require('./Counter.js');
 const Schema = mongoose.Schema;
 
-const relatedTypeEnum = [ 'HC_Promotion', 'HC_Registration', 'Admission', 'ProductOrder', 'Subscription' ];
+const relatedTypeEnum = [ 'HC_Promotion', 'HC_Registration', 'HC_Admission', 'HC_ProductOrder', 'HC_Subscription' ];
 const paymentStatusEnum = [ 'Pending', 'Paid', 'Failed', 'Refunded' ];
 const gatewayEnum = [ 'Razorpay' ];
 
@@ -15,7 +15,8 @@ const hcPaymentSchema = new Schema({
     },
     related_To_Id__c: {
         type: Schema.Types.ObjectId,
-        required: true
+        required: true,
+        refPath: 'related_Type__c'
     },
     related_Type__c: {
         type: String,

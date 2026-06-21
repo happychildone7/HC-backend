@@ -3,6 +3,7 @@ const Contact = require('../Models/Contact.js');
 const Event = require('../Models/Event.js');
 const School = require('../Models/School.js');
 const Promotion = require('../Models/Promotion.js');
+const Content = require('../Models/Content.js');
 
 //Search Promotion
 const searchPromotions = async (req,res) => {
@@ -298,7 +299,34 @@ const getPromotionsByOwner = async(req,res) => {
         if (!promotions.length) {
             return res.status(200).json([]);
         }
-        res.status(200).json(promotions);
+        const relatedRecords = promotions.map(promotion => promotion.related_To_Id__c?._id).filter(Boolean);
+        const contents = await Content.find({
+            related_To_Id__c: {
+                $in: relatedRecords
+            },
+            type__c: 'Image'
+        }).lean();
+
+        const contentMap = {};
+        contents.forEach(content => {
+            const recordId = content.related_To_Id__c.toString();
+            if (!contentMap[recordId]) {
+                contentMap[recordId] = [];
+            }
+            contentMap[recordId].push(content);
+        });
+        const response  = promotions.map(promotion => {
+            const listing = promotion.related_To_Id__c;
+            const listingId = listing?._id?.toString();
+            return {
+                ...promotion,
+                related_To_Id__c: {
+                        ...listing,
+                        contents: contentMap[listingId] || []
+                }
+            }
+        });
+        res.status(200).json(response);
     }catch(error){
         return res.status(500).json({
             error: error.message
