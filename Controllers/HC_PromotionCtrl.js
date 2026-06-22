@@ -334,6 +334,76 @@ const getPromotionsByOwner = async(req,res) => {
     }
 };
 
+const getFeaturedPromotions = async(req,res) => {
+    try{
+        console.log('ccbv0');
+        const {
+            listingType = 'HC_Event',
+            promotionType= 'Featured'
+        } = req.query;
+        console.log('ccbv1');
+        const promotions = await Promotion.find({
+                active__c: true,
+                promotion_Type__c: promotionType,
+                related_Type__c: listingType
+            })
+            .populate('related_To_Id__c')
+            .sort({
+                createdAt: -1
+            })
+            .lean();
+        console.log('ccbv2');
+        if (!promotions.length) {
+            return res.status(200).json([]);
+        }
+
+        const listingIds = promotions.map(promotion => promotion.related_To_Id__c?._id).filter(Boolean);
+        const contents = await Content.find({
+            related_To_Id__c: {
+                $in: listingIds
+            },
+            type__c: 'Image'
+        }).lean();
+        const contentMap = {};
+        contents.forEach(content => {
+            const recordId = content.related_To_Id__c.toString();
+            if (!contentMap[recordId]) {
+                contentMap[recordId] = [];
+            }
+            contentMap[recordId].push(content);
+        });
+        console.log('ccbv3');
+        const response = promotions.map(promotion => {
+            console.log('ccbv4');
+            const listing = promotion.related_To_Id__c;
+            const listingId = listing?._id?.toString();
+            const images = contentMap[listingId] || [];
+            const primaryImage = images.find(img => img.primary_Image__c) || images[0];
+
+            return {
+                promotionId: promotion._id,
+                promotionNumber: promotion.promotion_Number__c,
+                promotionType: promotion.promotion_Type__c,
+                startDate: promotion.start_Date__c,
+                endDate: promotion.end_Date__c,
+                listingId: listing?._id,
+                listingType: promotion.related_Type__c,
+                listingName:
+                    listing?.event_Name__c ||
+                    listing?.school_Name__c ||
+                    listing?.institute_Name__c ||
+                    listing?.tutor_Name__c,
+                listing,
+                image: primaryImage?.image_URL__c || null
+            };
+        });
+        return res.status(200).json(response);
+    }catch(err){
+        console.log(error);
+        return res.status(500).json({ error: error.message });
+    } 
+}
+
 module.exports = {
     searchPromotions,
     getSinglePromotion,
@@ -344,5 +414,6 @@ module.exports = {
     deleteMultiplePromotion,
     activatePromotions,
     deactivatePromotions,
-    getPromotionsByOwner
+    getPromotionsByOwner,
+    getFeaturedPromotions
 }

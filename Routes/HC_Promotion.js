@@ -9,12 +9,15 @@ const {
     deleteMultiplePromotion,
     activatePromotions,
     deactivatePromotions,
-    getPromotionsByOwner
+    getPromotionsByOwner,
+    getFeaturedPromotions
 } = require('../Controllers/HC_PromotionCtrl.js');
 
 const router = express.Router();
 
 router.get('/search/',searchPromotions);
+router.get('/featured',getFeaturedPromotions);
+router.get('/myPromotions/:ownerId',getPromotionsByOwner);
 router.get('/:id',getSinglePromotion);
 router.get('/',getAllPromotions);
 router.post('/',createPromotion);
@@ -23,6 +26,5 @@ router.delete('/:id',deletePromotion);
 router.post('/deleteMany',deleteMultiplePromotion);
 router.post('/bulkActivate',activatePromotions);
 router.post('/bulkDeactivate',deactivatePromotions);
-router.get('/myPromotions/:ownerId',getPromotionsByOwner);
 
 module.exports = router;
