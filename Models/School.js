@@ -7,6 +7,7 @@ const classEnum = [
   'Class_1', 'Class_2', 'Class_3', 'Class_4', 'Class_5', 'Class_6', 'Class_7', 'Class_8', 'Class_9', 'Class_10', 'Class_11', 'Class_12'
 ];
 const facilityEnum = ['Playground', 'Library', 'Computer_Lab', 'Swimming_Pool', 'Canteen', 'Sports_Complex', 'Horse_Riding'];
+const statusEnum = ['Draft','Pending_Approval','Published','Suspended','Archived']
 
 const hcSchoolSchema = new Schema({
     Name__c: {
@@ -84,6 +85,11 @@ const hcSchoolSchema = new Schema({
         type:   String,
         unique: true,
         immutable: true
+    },
+    status__c: {
+        type: String,
+        enum: statusEnum,
+        default: 'Draft'
     },
     owner__c: {
         type: Schema.Types.ObjectId,

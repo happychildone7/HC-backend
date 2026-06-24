@@ -21,18 +21,36 @@ const fetchPartnerListings = async (req, res) => {
         .sort({ createdAt: -1 })
         .lean();
 
-        const eventIds = events.map(
-            ev => ev._id
-        );
+        const schools = await School.find({
+            owner__c: ownerId
+        })
+        .populate('location__c')
+        .sort({ createdAt: -1 })
+        .lean();
+
+        const items = [
+            ...events.map(event => ({
+                ...event,
+                entityType: 'HC_Event'
+            })),
+            ...schools.map(school => ({
+                ...school,
+                entityType: 'HC_School'
+            }))
+        ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        const relatedToIds = [
+            ...events.map(ev => ev._id),
+            ...schools.map(sc => sc._id)
+        ];
 
         const contents = await Content.find({
             related_To_Id__c: {
-                $in: eventIds
+                $in: relatedToIds
             },
-            related_Type__c: 'HC_Event',
             type__c: 'Image'
         }).lean();
-        const response = getListingResponseWrapper(events,contents);
+        const response = getListingResponseWrapper(items,contents);
         return res.status(200).json(response);
     } catch (error) {
         console.error(
@@ -45,7 +63,7 @@ const fetchPartnerListings = async (req, res) => {
     }
 };
 
-const getListingResponseWrapper = (events,contents) => {
+const getListingResponseWrapper = (items,contents) => {
     const imageContentMap = {};
     for (const cont of contents) {
         const code = cont.related_To_Code__c;
@@ -63,22 +81,23 @@ const getListingResponseWrapper = (events,contents) => {
     }
 
     return {
-        listings: events.map(
-            event => {
-                const images = imageContentMap[event.event_Code__c] || [];
+        listings: items.map(
+            item => {
+                const listingCode = item.entityType === 'HC_School' ? item.school_Code__c : item.event_Code__c;
+                const images = imageContentMap[listingCode] || [];
                 return {
-                    listingId: event._id,
-                    listingType: 'HC_Event',
-                    listingCode: event.event_Code__c,
-                    listingName: event.Name__c,
-                    listingStatus: event.status__c,
-                    active: event.active__c,
-                    description: event.description__c,
+                    listingId: item._id,
+                    listingType: item.entityType,
+                    listingCode,
+                    listingName: item.Name__c,
+                    listingStatus: item.status__c,
+                    active: item.active__c,
+                    description: item.description__c,
                     location: [
-                                event.location__c?.line1__c,
-                                event.location__c?.city__c
+                                item.location__c?.line1__c,
+                                item.location__c?.city__c
                               ].filter(Boolean).join(', '),
-                    createdAt: event.createdAt,
+                    createdAt: item.createdAt,
                     image: images
                 };
             }
@@ -94,18 +113,23 @@ const getListingDetail = async(req,res) => {
             });
         }
         let listing = null;
+        let entityType = null;
         switch (listingType?.toUpperCase()) {
             case "HC_EVENT":
                 listing = await Event.findById(listingId).populate('location__c').lean();
+                entityType = 'HC_Event';
                 break;
             case "HC_SCHOOL":
                 listing = await School.findById(listingId).populate('location__c').lean();
+                entityType = 'HC_School';
                 break;
             /* case "HC_INSTITUTE":
                 listing = await Institute.findById(listingId).populate('location__c').lean();
+                entityType = 'HC_Institute';
                 break;
             case "HC_TUTOR":
                 listing = await Tutor.findById(listingId).populate('location__c').lean();
+                entityType = 'HC_Tutor';
                 break; */
             default:
                 return res.status(400).json({
@@ -119,6 +143,7 @@ const getListingDetail = async(req,res) => {
                 message: "Listing not found"
             });
         }
+        listing.entityType = entityType;
         const contents = await Content.find({
             related_To_Id__c: {
                 $in: listingId

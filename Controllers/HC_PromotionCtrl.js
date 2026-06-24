@@ -4,6 +4,7 @@ const Event = require('../Models/Event.js');
 const School = require('../Models/School.js');
 const Promotion = require('../Models/Promotion.js');
 const Content = require('../Models/Content.js');
+const { getAnalyticsSummary } = require('../services/AnalyticsService.js');
 
 //Search Promotion
 const searchPromotions = async (req,res) => {
@@ -300,13 +301,15 @@ const getPromotionsByOwner = async(req,res) => {
             return res.status(200).json([]);
         }
         const relatedRecords = promotions.map(promotion => promotion.related_To_Id__c?._id).filter(Boolean);
+        const promotionIds = promotions.map(
+            p => p._id
+        );
         const contents = await Content.find({
             related_To_Id__c: {
                 $in: relatedRecords
             },
             type__c: 'Image'
         }).lean();
-
         const contentMap = {};
         contents.forEach(content => {
             const recordId = content.related_To_Id__c.toString();
@@ -315,14 +318,27 @@ const getPromotionsByOwner = async(req,res) => {
             }
             contentMap[recordId].push(content);
         });
+        const analyticsMap = await getAnalyticsSummary(
+            'HC_Promotion',
+            promotionIds
+        );
         const response  = promotions.map(promotion => {
             const listing = promotion.related_To_Id__c;
             const listingId = listing?._id?.toString();
+            const analytics = analyticsMap[promotion._id.toString()] || {};
             return {
                 ...promotion,
                 related_To_Id__c: {
                         ...listing,
                         contents: contentMap[listingId] || []
+                },
+                analytics: {
+                    impressions: analytics.impressions || 0,
+                    clicks: analytics.clicks || 0,
+                    views: analytics.views || 0,
+                    saves: analytics.saves || 0,
+                    enquiries: analytics.enquiries || 0,
+                    bookings: analytics.bookings || 0
                 }
             }
         });
@@ -334,25 +350,27 @@ const getPromotionsByOwner = async(req,res) => {
     }
 };
 
-const getFeaturedPromotions = async(req,res) => {
+const getPromotions = async(req,res) => {
     try{
-        console.log('ccbv0');
         const {
-            listingType = 'HC_Event',
-            promotionType= 'Featured'
+            listingType,
+            promotionType
         } = req.query;
-        console.log('ccbv1');
-        const promotions = await Promotion.find({
-                active__c: true,
-                promotion_Type__c: promotionType,
-                related_Type__c: listingType
-            })
+        const query = {
+            active__c: true
+        };
+        if(promotionType){
+            query.promotion_Type__c = promotionType;
+        }
+        if(listingType) {
+            query.related_Type__c = listingType;
+        }
+        const promotions = await Promotion.find(query)
             .populate('related_To_Id__c')
             .sort({
                 createdAt: -1
             })
             .lean();
-        console.log('ccbv2');
         if (!promotions.length) {
             return res.status(200).json([]);
         }
@@ -372,7 +390,6 @@ const getFeaturedPromotions = async(req,res) => {
             }
             contentMap[recordId].push(content);
         });
-        console.log('ccbv3');
         const response = promotions.map(promotion => {
             console.log('ccbv4');
             const listing = promotion.related_To_Id__c;
@@ -415,5 +432,5 @@ module.exports = {
     activatePromotions,
     deactivatePromotions,
     getPromotionsByOwner,
-    getFeaturedPromotions
+    getPromotions
 }

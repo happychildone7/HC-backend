@@ -83,7 +83,7 @@ const hcEventSchema = new Schema({
     },
     status__c: {
         type: String,
-        enum: ['Draft', 'Published', 'Ongoing', 'Completed', 'Cancelled'],
+        enum: ['Draft', 'Published', 'Registration_Closed', 'Ongoing', 'Completed', 'Cancelled'],
         default: 'Draft'
     },
     owner__c: {

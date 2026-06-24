@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Location = require('../Models/Location.js');
 const School = require('../Models/School.js');
+const User = require('../Models/User.js');
+const Contact = require('../Models/Contact.js');
 const HCContent = require('../Models/Content.js');
 const { deleteCloudinaryImages } = require('../utils/cloudinaryHelper.js');
 
@@ -57,7 +59,44 @@ const createSchool = async (req,res) => {
         req.body.contact__c = null;
     }
     console.log('req<,',req.body);
-    const { Name__c,description__c,location__c,contact__c,board__c,ownership_Type__c,type__c,fee_Monthly_Min__c,co_Ed_Status__c,medium_Instruction__c,classes__c,age_Criteria_Min__c,age_Criteria_Max__c,facilities__c,rating_Avg__c,rating_Count__c,admission_Status__c,active__c } = req.body;
+    const { 
+        Name__c,
+        description__c,
+        location__c,
+        contact__c,
+        board__c,
+        ownership_Type__c,
+        type__c,
+        fee_Monthly_Min__c,
+        co_Ed_Status__c,
+        medium_Instruction__c,
+        classes__c,
+        age_Criteria_Min__c,
+        age_Criteria_Max__c,
+        facilities__c,
+        rating_Avg__c,
+        rating_Count__c,
+        admission_Status__c,
+        status__c,
+        active__c,
+        owner__c,
+        primary_Contact__c 
+    } = req.body;
+    if(!owner__c) {
+        return res.status(400).json({ error: 'Owner is required.' });
+    }
+    const ownerExists = await User.findById(owner__c);
+    if (!ownerExists) {
+        console.log('no user');
+        return res.status(400).json({ error: 'Invalid Owner selected.' });
+    }
+    if(primary_Contact__c){
+        const contExists = await Contact.findById(primary_Contact__c);
+        if (!contExists) {
+            return res.status(400).json({ error: 'Invalid contact selected.' });
+        }
+        console.log('no contact');
+    }
     if (!Array.isArray(classes__c) || classes__c.length === 0) {
         return res.status(400).json({ error: 'Classes are required' });
     }
@@ -73,7 +112,7 @@ const createSchool = async (req,res) => {
         console.log('no loc');
     }
     try{
-        const school = await School.create({ Name__c,description__c,location__c,contact__c,board__c,ownership_Type__c,type__c,fee_Monthly_Min__c,co_Ed_Status__c,medium_Instruction__c,classes__c,age_Criteria_Min__c,age_Criteria_Max__c,beginning_Class__c,end_Class__c,facilities__c,rating_Avg__c,rating_Count__c,admission_Status__c,active__c });
+        const school = await School.create({ Name__c,description__c,location__c,contact__c,board__c,ownership_Type__c,type__c,fee_Monthly_Min__c,co_Ed_Status__c,medium_Instruction__c,classes__c,age_Criteria_Min__c,age_Criteria_Max__c,beginning_Class__c,end_Class__c,facilities__c,rating_Avg__c,rating_Count__c,admission_Status__c,status__c,active__c,primary_Contact__c,owner__c });
         return res.status(200).json(school);
     }
     catch(error){
@@ -112,6 +151,7 @@ const updateSchool = async (req,res) => {
         }
         const populatedSchool = await School.findById(id)
             .populate('location__c')
+            .populate('owner__c')
             .lean();
         return res.status(200).json(populatedSchool);
     }catch(error){
@@ -176,9 +216,8 @@ const activateSchools = async (req,res) => {
     }
     const result = await School.updateMany(
         { _id: { $in: ids }, active__c: false },
-        { $set: { active__c: true } }
+        { $set: { active__c: true, status__c: 'Published' } }
     );
-    console.log('yoyochch');
     return res.status(200).json({
         updated: result.modifiedCount,
         matched: result.matchedCount
