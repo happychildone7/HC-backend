@@ -1,6 +1,7 @@
 const Location = require('../Models/Location.js');
 const School = require('../Models/School.js');
 const Content = require('../Models/Content.js');
+const Promotion = require('../Models/Promotion.js');
 const fetchSchoolContent = async(req, res) => {
     try{
         const { country,state,city } = req.query;
@@ -16,9 +17,9 @@ const fetchSchoolContent = async(req, res) => {
         }
         const locIds = locations.map(l => l._id);
         const schools = await School.find({ location__c: { $in: locIds }, active__c: true }).populate('location__c');
-        const schooldIds = schools.map(sc => sc._id);
+        const schoolIds = schools.map(sc => sc._id);
         const contents = await Content.find({
-                                    related_To_Id__c: { $in: schooldIds }, 
+                                    related_To_Id__c: { $in: schoolIds }, 
                                     related_Type__c: "HC_School",
                                     type__c: "Image",
                                 }).lean();
@@ -44,10 +45,16 @@ const fetchFeaturedSchoolContent = async(req, res) => {
             return res.status(400).json({ message: 'Location not found.'});
         }
         const locIds = locations.map(l => l._id);
-        const schools = await School.find({ location__c: { $in: locIds }, active__c: true }).limit(3).populate('location__c');
-        const schooldIds = schools.map(sc => sc._id);
+        const schools = await School.find({ location__c: { $in: locIds }, active__c: true }).populate('location__c').lean();
+        const schoolIds = schools.map(sc => sc._id);
+        const promotions = await Promotion.find({
+                                    active__c: true,
+                                    promotion_Type__c: 'Featured',
+                                    related_Type__c: 'HC_School',
+                                    related_To_Id__c: { $in: schoolIds }
+                                })
         const contents = await Content.find({
-                                    related_To_Id__c: { $in: schooldIds }, 
+                                    related_To_Id__c: { $in: schoolIds }, 
                                     related_Type__c: "HC_School",
                                     type__c: "Image",
                                 }).lean();

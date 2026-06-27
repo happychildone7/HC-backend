@@ -11,7 +11,6 @@ const incrementMetric = async (
     entityId,
     metric
 ) => {
-    console.log('ccc<sd',entityId,entityType,metric);
     const today = getToday();
     try{
         const result = await HC_Analytics.findOneAndUpdate(
@@ -31,7 +30,6 @@ const incrementMetric = async (
                 setDefaultsOnInsert: true
             }
         );
-        console.log('analytics result', result);
     }catch(err){
         console.log('analytics err', err);
     }

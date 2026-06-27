@@ -80,16 +80,20 @@ const verifyPayment = async(req,res) => {
         
         await payment.save({ session });
         if(payment.related_Type__c === "HC_Promotion"){
-            const promotion = await Promotion.findById(payment.related_To_Id__c);
+            const promotion = await Promotion.findById(payment.related_To_Id__c).session(session);
             if(promotion) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const requestedStart = new Date(promotion.requested_Start_Date__c);
+                requestedStart.setHours(0, 0, 0, 0);
+                const effectiveStart = requestedStart > today ? requestedStart : today;
+                const effectiveEnd = new Date(effectiveStart);
+                effectiveEnd.setDate(effectiveEnd.getDate() + promotion.duration_Days__c - 1);
+
                 promotion.payment_Status__c = "Paid";
                 promotion.active__c = true;
-                const startDate = new Date();
-                const endDate = new Date(startDate);
-                endDate.setDate(endDate.getDate() + promotion.duration_Days__c);
-                promotion.start_Date__c = startDate;
-                promotion.end_Date__c = endDate;
-                promotion.end_Date__c = endDate;
+                promotion.start_Date__c = effectiveStart;
+                promotion.end_Date__c = effectiveEnd;
 
                 await promotion.save({ session });
             }

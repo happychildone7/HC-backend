@@ -45,6 +45,9 @@ const hcPromotionSchema = new Schema({
         type: Number,
         default: 1
     },
+    requested_Start_Date__c: {
+        type: Date
+    },
     start_Date__c: {
         type: Date
     },
@@ -71,6 +74,10 @@ const hcPromotionSchema = new Schema({
     },
     notes__c: {
         type: String
+    },
+    reservation_Expires_At__c: {
+        type: Date,
+        index: true
     },
     created_By__c: {
         type: Schema.Types.ObjectId,

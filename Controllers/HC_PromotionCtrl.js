@@ -4,7 +4,10 @@ const Event = require('../Models/Event.js');
 const School = require('../Models/School.js');
 const Promotion = require('../Models/Promotion.js');
 const Content = require('../Models/Content.js');
+const Location = require('../Models/Location.js');
 const { getAnalyticsSummary } = require('../services/AnalyticsService.js');
+const { checkPromotionOverlap } = require('../utils/promotionHelper.js');
+const { formatDate } = require('../utils/commonUtils.js');
 
 //Search Promotion
 const searchPromotions = async (req,res) => {
@@ -58,6 +61,7 @@ const createPromotion = async (req,res) => {
                 related_To_Id__c,
                 related_Type__c,
                 promotion_Type__c,
+                requested_Start_Date__c,
                 duration_Days__c,
                 amount__c,
                 notes__c,
@@ -69,6 +73,22 @@ const createPromotion = async (req,res) => {
         }
         if(!related_Type__c) {
             return res.status(400).json({ error: 'Related type is required.' });
+        }
+        const { overlap,promotion } = await checkPromotionOverlap({
+            listingId: related_To_Id__c,
+            requestedStartDate: requested_Start_Date__c,
+            duration: duration_Days__c
+        });
+        if(overlap){
+            return res.status(409).json({
+                success: false,
+                error: `A ${promotion.promotion_Type__c} promotion already exists for this ${promotion.related_Type__c.replace('HC_','')} from ${formatDate(promotion.start_Date__c)} to ${formatDate(promotion.end_Date__c)}.`,
+                promotion: {
+                    type: promotion.promotion_Type__c,
+                    startDate: promotion.start_Date__c ?? promotion.requested_Start_Date__c,
+                    duration: promotion.duration_Days__c
+                }
+            });
         }
         if(!created_By__c) {
             return res.status(400).json({ error: 'Created by is required.' });
@@ -131,7 +151,7 @@ const createPromotion = async (req,res) => {
         }  
 
         /* Create Promotion */
-        const promotion = await Promotion.create({
+        const promo = await Promotion.create({
             related_To_Id__c,
             related_Type__c,
             promotion_Type__c: promotion_Type__c || 'Featured',
@@ -140,12 +160,14 @@ const createPromotion = async (req,res) => {
             amount__c,
             active__c: false,
             payment_Status__c: 'Pending',
+            requested_Start_Date__c,
             start_Date__c: null,
             end_Date__c: null,
+            reservation_Expires_At__c: new Date(Date.now() + 15 * 60 * 1000),
             notes__c: notes__c || null,
             created_By__c
         });
-        return res.status(201).json(promotion);
+        return res.status(201).json(promo);
     }
     catch(error){
         console.log('Create Promotion Error:',error);
@@ -354,8 +376,11 @@ const getPromotions = async(req,res) => {
     try{
         const {
             listingType,
-            promotionType
+            promotionType,
+            city,
+            limit
         } = req.query;
+        console.log('ccjgjdh>',listingType,' ',promotionType,' ',city,' ',limit);
         const query = {
             active__c: true
         };
@@ -365,16 +390,56 @@ const getPromotions = async(req,res) => {
         if(listingType) {
             query.related_Type__c = listingType;
         }
-        const promotions = await Promotion.find(query)
-            .populate('related_To_Id__c')
+        if(city && city !== 'All' && listingType){
+            const locations = await Location.find({
+                city__c: city
+            }).select('_id');
+            const locationIds = locations.map(loc => loc._id);
+            let ListingModel = null;
+            switch (listingType){
+                case 'HC_School':
+                    ListingModel = School;
+                    break;
+                case 'HC_Event':
+                    ListingModel = Event;
+                    break;
+                case 'HC_Institute':
+                    ListingModel = Institute;
+                    break;
+                case 'HC_Tutor':
+                    ListingModel = Tutor;
+                    break;
+                default:
+                    return res.status(400).json({ message: "Invalid listing type." });
+            }
+            const listingIds = await ListingModel.find({
+                active__c: true,
+                location__c: {
+                    $in: locationIds
+                }
+            }).distinct('_id');
+            query.related_To_Id__c = {
+                $in: listingIds
+            };
+        }
+        let promotionsQuery = Promotion.find(query)
+            .populate({
+                path: 'related_To_Id__c',
+                populate: {
+                    path: 'location__c'
+                }
+            })
             .sort({
                 createdAt: -1
-            })
-            .lean();
+            });
+        if(limit){
+            promotionsQuery = promotionsQuery.limit(Number(limit));
+        }
+        const promotions = await promotionsQuery.lean();
+
         if (!promotions.length) {
             return res.status(200).json([]);
         }
-
         const listingIds = promotions.map(promotion => promotion.related_To_Id__c?._id).filter(Boolean);
         const contents = await Content.find({
             related_To_Id__c: {
@@ -382,6 +447,7 @@ const getPromotions = async(req,res) => {
             },
             type__c: 'Image'
         }).lean();
+        console.log('listingIds>>',listingIds);
         const contentMap = {};
         contents.forEach(content => {
             const recordId = content.related_To_Id__c.toString();
@@ -391,7 +457,6 @@ const getPromotions = async(req,res) => {
             contentMap[recordId].push(content);
         });
         const response = promotions.map(promotion => {
-            console.log('ccbv4');
             const listing = promotion.related_To_Id__c;
             const listingId = listing?._id?.toString();
             const images = contentMap[listingId] || [];
@@ -405,19 +470,21 @@ const getPromotions = async(req,res) => {
                 endDate: promotion.end_Date__c,
                 listingId: listing?._id,
                 listingType: promotion.related_Type__c,
-                listingName:
-                    listing?.event_Name__c ||
-                    listing?.school_Name__c ||
-                    listing?.institute_Name__c ||
-                    listing?.tutor_Name__c,
-                listing,
-                image: primaryImage?.image_URL__c || null
+                title: listing?.Name__c,
+                image: primaryImage?.image_URL__c || null,
+                location: listing?.location__c
+                            ? [
+                                listing.location__c.line1__c,
+                                listing.location__c.city__c
+                            ].filter(Boolean).join(", ")
+                            : "",
+                listing
             };
         });
         return res.status(200).json(response);
     }catch(err){
-        console.log(error);
-        return res.status(500).json({ error: error.message });
+        console.log(err);
+        return res.status(500).json({ error: err.message });
     } 
 }
 
