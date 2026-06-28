@@ -1,22 +1,12 @@
 const Promotion = require('../Models/Promotion');
+
 const checkPromotionOverlap = async({
     listingId,
     requestedStartDate,
     duration
 }) => {
     const now = new Date();
-    const existingPromotions = await Promotion.find({
-        related_To_Id__c: listingId,
-        $or: [
-            {
-                payment_Status__c: "Paid"
-            },
-            {
-                payment_Status__c: "Pending",
-                reservation_Expires_At__c: { $gt: now }
-            }
-        ]
-    });
+    const existingPromotions = await getValidPromotionsByListing(listingId);
     const requestedStart = new Date(requestedStartDate);
     const requestedEnd = new Date(requestedStart);
     requestedEnd.setDate(
@@ -37,7 +27,26 @@ const checkPromotionOverlap = async({
     return {
         overlap: false
     };
-}
+};
+const getValidPromotionsByListing = async(listingId) => {
+    const now = new Date();
+    return await Promotion.find({
+        related_To_Id__c: listingId,
+        $or: [
+            {
+                payment_Status__c: "Paid"
+            },
+            {
+                payment_Status__c: "Pending",
+                reservation_Expires_At__c: { $gt: now }
+            }
+        ]
+    })
+    .sort({
+        requested_Start_Date__c: 1
+    });
+};
 module.exports = {
-    checkPromotionOverlap
+    checkPromotionOverlap,
+    getValidPromotionsByListing
 };

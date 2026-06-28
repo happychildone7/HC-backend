@@ -10,13 +10,15 @@ const {
     activatePromotions,
     deactivatePromotions,
     getPromotionsByOwner,
-    getPromotions
+    getPromotions,
+    getPromotionsByListing
 } = require('../Controllers/HC_PromotionCtrl.js');
 
 const router = express.Router();
 
 router.get('/search/',searchPromotions);
 router.get('/list',getPromotions);
+router.get('/byListing/:listingId',getPromotionsByListing);
 router.get('/myPromotions/:ownerId',getPromotionsByOwner);
 router.get('/:id',getSinglePromotion);
 router.get('/',getAllPromotions);

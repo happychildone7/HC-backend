@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const Promotion = require('../Models/Promotion.js');
 const razorKey = process.env.RAZORPAY_KEY_SECRET;
 const mongoose = require('mongoose');
+const { activatePromotionPayment, markPaymentPaid } = require('../services/PaymentActivationService.js');
 
 const createPayment = async(req,res) => {
     try{
@@ -72,32 +73,15 @@ const verifyPayment = async(req,res) => {
         if(Number(razorpayPaymentInfo.amount) !== Number(payment.amount__c * 100)){
             return res.status(400).json({ success:false,error: "Amount mismatch" });
         }
-        payment.payment_Status__c = "Paid";
-        payment.gateway_Order_Id__c = razorpay_order_id;
-        payment.gateway_Payment_Id__c = razorpay_payment_id;
-        payment.gateway_Signature__c = razorpay_signature;
-        payment.paid_At__c = new Date();
-        
-        await payment.save({ session });
-        if(payment.related_Type__c === "HC_Promotion"){
-            const promotion = await Promotion.findById(payment.related_To_Id__c).session(session);
-            if(promotion) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const requestedStart = new Date(promotion.requested_Start_Date__c);
-                requestedStart.setHours(0, 0, 0, 0);
-                const effectiveStart = requestedStart > today ? requestedStart : today;
-                const effectiveEnd = new Date(effectiveStart);
-                effectiveEnd.setDate(effectiveEnd.getDate() + promotion.duration_Days__c - 1);
-
-                promotion.payment_Status__c = "Paid";
-                promotion.active__c = true;
-                promotion.start_Date__c = effectiveStart;
-                promotion.end_Date__c = effectiveEnd;
-
-                await promotion.save({ session });
+        await markPaymentPaid(
+            payment,
+            {
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                razorpaySignature: razorpay_signature,
+                session
             }
-        }
+        )
         await session.commitTransaction();
         return res.status(200).json({ 
             success:true,
@@ -108,6 +92,8 @@ const verifyPayment = async(req,res) => {
     }catch(error){
         await session.abortTransaction();
         return res.status(500).json({ error:error.message });
+    }finally {
+        session.endSession();
     }
 };
 const createOrder = async (req,res) => {
@@ -148,10 +134,49 @@ const createOrder = async (req,res) => {
         return res.status(500).json({ success:false,error:error.message });
     }
 };
+const razorpayWebhook = async(req,res) => {
+    try{
+        console.log('webhook>>',req.body.toString());
+        const signature = req.headers["x-razorpay-signature"];
+        const expectedSignature = crypto.createHmac("sha256",process.env.RAZORPAY_WEBHOOK_SECRET).update(req.body).digest("hex");
+        if(expectedSignature !== signature){
+            console.log("Invalid webhook signature");
+            return res.status(400).json({
+                success: false,
+                message: "Invalid signature"
+            });
+        }
+        const payload = JSON.parse(req.body.toString());
+        const event = payload.event;
+        if(event === "payment.captured"){
+            const paymentEntity = payload.payload.payment.entity;
+            const razorpayPaymentId = paymentEntity.id;
+            const razorpayOrderId = paymentEntity.order_id;
+            const payment = await Payment.findOne({
+                                gateway_Order_Id__c: razorpayOrderId
+                            });
+            if (!payment || payment.payment_Status__c === 'Paid') {
+                return res.status(200).json({ success: true,message: "Payment already processed" });
+            }
+            await markPaymentPaid(
+                payment,
+                {
+                    razorpayOrderId: razorpayOrderId,
+                    razorpayPaymentId: razorpayPaymentId
+                }
+            )
+        }
+        return res.status(200).json({ success: true });
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({ success: false,error: err });
+    }
+};
 
 module.exports = {
     createPayment,
     getPayment,
     verifyPayment,
-    createOrder
+    createOrder,
+    razorpayWebhook
 }

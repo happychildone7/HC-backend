@@ -55,7 +55,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 //use cookie-parser before routes
 app.use(cookieParser());
-
+app.use('/api/payment/razorpay/webhook',express.raw({type: 'application/json'}));
 //Use express.json to parse JSON bodies
 app.use(express.json());
 

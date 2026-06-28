@@ -6,7 +6,7 @@ const Promotion = require('../Models/Promotion.js');
 const Content = require('../Models/Content.js');
 const Location = require('../Models/Location.js');
 const { getAnalyticsSummary } = require('../services/AnalyticsService.js');
-const { checkPromotionOverlap } = require('../utils/promotionHelper.js');
+const { checkPromotionOverlap, getValidPromotionsByListing } = require('../utils/promotionHelper.js');
 const { formatDate } = require('../utils/commonUtils.js');
 
 //Search Promotion
@@ -487,6 +487,23 @@ const getPromotions = async(req,res) => {
         return res.status(500).json({ error: err.message });
     } 
 }
+const getPromotionsByListing = async(req,res) => {
+    try{
+        const {
+            listingId
+        } = req.params;
+        const promotions = await getValidPromotionsByListing(listingId);
+        return res.status(200).json({
+            success: true,
+            promotions
+        });
+    }catch(err){
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+};
 
 module.exports = {
     searchPromotions,
@@ -499,5 +516,6 @@ module.exports = {
     activatePromotions,
     deactivatePromotions,
     getPromotionsByOwner,
-    getPromotions
+    getPromotions,
+    getPromotionsByListing
 }
