@@ -1,5 +1,5 @@
-const Promotion = require("../Models/HC_Promotion");
-const Payment = require("../Models/HC_Payment");
+const Promotion = require("../Models/Promotion");
+const Payment = require("../Models/Payment");
 
 const activatePromotionPayment = async (payment,session = null) => {
     if(payment.related_Type__c !== "HC_Promotion"){
