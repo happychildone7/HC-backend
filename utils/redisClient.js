@@ -1,6 +1,6 @@
 const redis = require('redis');
 
-const redisClient = redis.createClient(); // This creates the client
+const redisClient = redis.createClient(); 
 
 redisClient.on('error', (err) => {
     console.error('Redis Client Error', err);
@@ -8,7 +8,7 @@ redisClient.on('error', (err) => {
 
 const connectRedis = async () => {
     if (!redisClient.isOpen) {
-        await redisClient.connect(); // You MUST connect before using
+        await redisClient.connect(); 
         console.log('✅Redis client connected');
     }
 };

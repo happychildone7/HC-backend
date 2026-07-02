@@ -1,9 +1,8 @@
 const HCUser = require('../Models/User.js');
 const HCContact = require('../Models/Contact.js');
-const mongoose = require('mongoose');
-const { redisClient, connectRedis } = require('../utils/redisClient.js');
 const sendEmail = require('../utils/emailService.js');
 const getOtpEmailTemplate = require('../utils/emailTemplate.js');
+const RedisService = require('../services/RedisService.js');
 
 //register a user
 const registerUser = async (req, res) => {
@@ -25,12 +24,16 @@ const registerUser = async (req, res) => {
 
         const otp = Math.floor(100000+Math.random() * 900000).toString();
         console.log('check',otp);
-
-        await connectRedis(); // ensure connected
-        await redisClient.setEx(`verify:otp:${email__c}`,3600,JSON.stringify({ email__c,password__c,phone__c,otp }));
+        await RedisService.set(`verify:otp:${email__c}`,
+                                { 
+                                    email__c,
+                                    password__c,
+                                    phone__c,
+                                    otp 
+                                },
+                                3600
+                            );
         console.log('Key saved:', `verify:otp:${email__c}`);
-        
-        console.log('check2',email__c);
         await sendEmail({
             to: email__c,
             subject: 'Welcome to Happy Child: Your Verification Code',
@@ -48,11 +51,11 @@ const verifyUser = async (req, res) => {
     const { email__c,enteredOtp } = req.body;
     const redisKey = `verify:otp:${email__c}`;
     console.log('keycheck',redisKey)
-    const userDataStr = await redisClient.get(redisKey);
-    if(!userDataStr){
+    const otpData = await RedisService.get(redisKey);
+    if(!otpData){
         return res.status(400).json({ error: 'OTP expired or invalid.' });
     }
-    const { password__c, phone__c, otp: storedOtp } = JSON.parse(userDataStr);
+    const { password__c, phone__c, otp: storedOtp } = otpData;
     if(enteredOtp !== storedOtp){
         return res.status(400).json({ error: 'Incorrect OTP.' });
     }
@@ -77,6 +80,7 @@ const verifyUser = async (req, res) => {
         last_Login__c: new Date()
     });
     await newUser.save();
+    await RedisService.remove(redisKey);
     return res.status(201).json({ message: 'User registered successfully.', userId: newUser._id });
 };
 

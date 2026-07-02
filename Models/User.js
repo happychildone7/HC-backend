@@ -15,20 +15,35 @@ const hcUserSchema = new Schema({
         type: String,
         required: false
     },
-    email__c: {
+    mobile__c: {
         type: String,
         unique: true,
-        lowercase: true,
+        sparse: true,
         trim: true
     },
-    password__c: {
-        type: String
+    mobile_Verified__c: {
+        type: Boolean,
+        default: false
     },
     otp__c: { 
         type: String
     },
     otp_Expiry__c: {
         type: Date
+    },
+    otp_Attempts__c: {
+        type: Number,
+        default: 0
+    },
+    email__c: {
+        type: String,
+        unique: true,
+        sparse: true,
+        lowercase: true,
+        trim: true
+    },
+    password__c: {
+        type: String
     },
     contact__c: { 
         type: Schema.Types.ObjectId,
@@ -42,6 +57,8 @@ const hcUserSchema = new Schema({
         type: Date
     }
 },{timestamps: true});
+hcUserSchema.index({ mobile__c: 1 });
+hcUserSchema.index({ email__c: 1 });
 
 // Hash password before saving
 hcUserSchema.pre('save', async function (next) {

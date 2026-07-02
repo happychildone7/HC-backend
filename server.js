@@ -22,6 +22,7 @@ const hcStateRouter = require('./Routes/HC_State.js');
 const hcCityRouter = require('./Routes/HC_City.js');
 const hcFileUploadRouter = require('./Routes/HC_FileUpload.js');
 const hcAnalyticsRouter = require('./Routes/HC_Analytics.js');
+const hcOtpRouter = require('./Routes/HC_Otp.js');
 const mongoose = require('mongoose');
 
 const allowedOrigins = [
@@ -101,6 +102,7 @@ app.use('/api/state',hcStateRouter);
 app.use('/api/city',hcCityRouter);
 app.use('/api/fileUpload',hcFileUploadRouter);
 app.use('/api/analytics',hcAnalyticsRouter);
+app.use('/api/otp',hcOtpRouter);
 
 
 
